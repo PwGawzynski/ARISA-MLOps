@@ -10,7 +10,6 @@ PYTHON_INTERPRETER = python
 # COMMANDS                                                                      #
 #################################################################################
 
-
 ## Install Python Dependencies
 .PHONY: requirements
 requirements:
@@ -33,7 +32,6 @@ lint:
 format:
 	black --config pyproject.toml ARISA_DSML
 
-
 .PHONY: preprocess
 preprocess:
 	python -m ARISA_DSML.preproc
@@ -44,13 +42,11 @@ train:
 
 .PHONY: resolve
 resolve:
-    $(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
 	
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
-
-
 
 #################################################################################
 # Self Documenting Commands                                                     #
