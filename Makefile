@@ -42,6 +42,10 @@ preprocess:
 train:
 	python -m ARISA_DSML.train
 
+.PHONY: resolve
+resolve:
+    $(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
