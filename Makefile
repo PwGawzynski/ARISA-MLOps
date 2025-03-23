@@ -42,7 +42,11 @@ train:
 
 .PHONY: resolve
 resolve:
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	python -m ARISA_DSML.resolve
+
+.PHONY: predict
+predict: resolve
+	python -m ARISA_DSML.predict
 	
 #################################################################################
 # PROJECT RULES                                                                 #
