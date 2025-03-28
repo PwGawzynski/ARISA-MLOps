@@ -1,139 +1,72 @@
 # ARISA-MLOps
-## Sessions 01 and 02
-### Prerequisites  
-Install python 3.11 with py manager on your local machine.  
-Install Visual Studio Code on your local machine.  
-Create a kaggle account and create a kaggle api key kaggle.json file.  
-Move the kaggle.json to   
-C:\Users\USERNAME\\.kaggle folder for windows,  
-/home/username/.config/kaggle folder for mac or linux.  
-### Local
-Fork repo to your own github account.  
-Clone forked repo to your local machine.  
-Open VS Code and open the repo directory.  
-In the VS Code terminal run the following to create a new python virtual environment:  
-```
-py -3.11 -m venv .venv
-```
-windows
-```
-.\.venv\Scripts\activate
-```
-mac or linux  
-```
-source .venv/bin/activate
-```
-and then open up notebook 02 and attempt to run the cells.  
+## Sessions 01 and 02 - Questions Answers
 
-### Github Codespaces  
-Fork repo to your own github account.  
-Click the code button, select codespaces tab click create codespace on main.  
-Optionally, after the codespace has finished loading click the blue button on the bottom left and select open in visual studio code.  
-Make sure to turn off the codepace when done, you have a limited amount of free runtime hours.  
+---
 
-## Sessions 03 and 04
-The focus of code introduced in sessions 03 and 04 (March 8th and 9th) is moving from the codebase developed in sessions 01 and 02,  
-namely moving from a codebase prepared for MLOps, to actually doing reproducible ML.  
-We will be implementing the experimentation and train/predict pipelines in the below diagram:
-![image](https://github.com/user-attachments/assets/f11539b6-9bcc-4a04-b89f-97e6e7383bf2)
-(source https://ml-ops.org/content/mlops-principles)
-More specifically, we will be hosting a MLflow tracking server in a Codespace (but AWS EC2 could also be an option),
-and running the two pipelines in GitHub Actions Workflows, see architecture below:
-![arisa-githut-architecture](https://github.com/user-attachments/assets/fb13f63b-e821-4b9b-869a-e3f2ea431a9b)
-![arisa resolve](https://github.com/user-attachments/assets/76eedd72-0326-4d80-879c-9f6761349032)
-### Getting the architecture up and running
-Since we will be using AWS S3 and RDS to host the MLflow artifact store and metadata store respectively we will neeed to set these up in AWS.  
-Set up a new AWS account if you don't have one already (and enable MFA!)
-#### Metadata store database
-Navigate to RDS  
-Create a new database using "Standard create"  
-Choose PostgreSQL engine  
-Select Free tier as Template  
-Change DB instance identifier to something like mlflow-db  
-Leave Master username as the default  
-Select Self managed for Credentials management and input a random password (keep the password for later)  
-Under connectivity select Yes for Publics access and create new VPC security group (call it something like mflow-db-sg) and note the Database port under Additional configuration (should be 5432)  
-Near the bottom under the second Additional configuration under Database options write mlflow_db under Initial database name  
-At the very bottom click Create database  
-Once the database has finished creating click on the instance and copy the endpoint  
-Click the VPC security group and make sure that the inbound rules look like the following:  
-![image](https://github.com/user-attachments/assets/99978aa4-5f0b-49de-a453-f5626956b23d)  
-#### Artifact store
-Navigate to S3  
-Create bucket  
-Leave all settings at their default values  
-Give a globally unique name to the bucket and keep it for later  
-Create bucket  
-#### Authenticate
-Navigate to IAM  
-Click Users  
-Create user  
-Enter a User name, something like github-actions-runner  
-Next  
-Under Set permissions choose Attach policies directly  
-Under Permissions policies add AmazonS3FullAccess  
-Next  
-Review and create -> Create user  
-Click the newly created user  
-Go to Security credentials  
-Click Create access key  
-Choose Application running outside AWS  
-Next  
-Optionally add a description  
-Click Create access key  
-Copy both the Access key and Secret access key (do not share these with anyone or commit them to any repo!)  
-#### GitHub Secrets setup
-You should now have the following pieces of information:  
- * Access key (from the github-actions-runner user security credentials)  
- * Secret access key (from the github-actions-runner user security credentials)  
- * MLflow database name (should be mlflow_db if you followed the above instructions)  
- * MLflow database endpoint (from RDS)  
- * MLflow database username (default is postgres)  
- * MLflow database password (the random password you chose when setting up the RDS database)
- * MLflow database port (should be 5432)  
- * Kaggle key (contents of kaggle.json, from earlier sessions or create a new one)
- * S3 bucket name
+**1. Why is MLFlow useful?**
 
-Add all of these to your repository's Codespaces secrets with the names:  
- * AWS_ACCESS_KEY_ID
- * AWS_SECRET_ACCESS_KEY
- * MLFLOWDB
- * MLFLOWDBENDPOINT
- * MLFLOWDBUSERNAME
- * MLFLOWDBPASS
- * MLFLOWDBPORT
- * KAGGLE_KEY
- * ARTIFACT_BUCKET
+MLFlow is very useful in the ML lifecycle because it allows us to track experiments, log metrics, and store artifacts (such as models and plots). This makes it easier to compare different runs and select the best performing model. It also helps with reproducibility by saving all details like code versions, hyperparameters, and data inputs, and it supports model versioning and collaboration among team members.
 
-Also add the following to your repository's Actions secrets:
- * AWS_ACCESS_KEY_ID
- * AWS_SECRET_ACCESS_KEY
- * KAGGLE_KEY
- * ARTIFACT_BUCKET
+---
 
-#### Code and codespaces setup 
-Now make sure your version/fork of the repo is up to date with the current state of the master branch of this repo  
-Especially make sure that the following commands are part of your .devcontainer.json:
-```
-	"postCreateCommand": "pip install --no-cache-dir mlflow==2.12.1 psycopg2",
-	"postStartCommand": "mlflow ui --backend-store-uri postgresql://${MLFLOWDBUSERNAME}:${MLFLOWDBPASS}@${MLFLOWDBENDPOINT}:${MLFLOWDBPORT}/${MLFLOWDB} --default-artifact-root s3://${ARTIFACT_BUCKET}/models --host 0.0.0.0 --port 5000",
-```
-as well as remoteEnv containing the Codespaces secrets (see main branch version)  
-Then start a new codespace with the update version of the code  
-Once connected to the codespace click the ports tabs and copy the codespace address and make sure to change visibility to public.  
-![image](https://github.com/user-attachments/assets/7aa26ee2-b5e2-4501-a7e8-bc0975fff330)  
-Back in actions secrets add a new secret containing the address with name MLFLOW_TRACKING_URI  
-When MLFlow UI has started run the model training a couple of times and see the experiments update in the UI  
-Freeze requirements using `pip freeze --local > requirements.txt` and make sure psycopg2 boto3 and kaggle appears in the requirements.txt file, if not install them manually  
-Finally make a change to the train.py code (can be as simple as a comment) and commit (directly to main is fine for this task)  
-A retrain pipeline should be started and hopefully success in the actions tab  
-After the retrain pipeline finished it should trigger the predict on model change pipeline  
-See how the models tab in the MLFlow UI has changed  
-Change something else in train.py, commit to main and see how the models page update again after both pipelines have run.
+**2. What is the purpose of having automated pipelines in an ML production environment? Why can't a data scientist just run notebooks to train models and produce predictions?**
 
-**If the mlflow ui does not successfully start click the blue button at the bottom left of the codespaces view and click view creation log for any errors, and if everything else fails try and delete and recreate the RDS database.**
+Automated pipelines are essential for several reasons:
+- **Consistency and Reproducibility:** They ensure that every training or prediction run follows the same process, reducing human errors that can occur when running notebooks manually.
+- **Scalability:** Automated pipelines can be scheduled, monitored, and scaled, which is crucial when models need to be updated or retrained continuously.
+- **CI/CD Integration:** They integrate well with Continuous Integration/Continuous Deployment practices, enabling smoother and faster deployments with less downtime.
+- **Auditing and Logging:** They provide clear logs and audit trails for each run, making it easier to troubleshoot and verify the processes.
 
+Notebooks are great for exploration, but they lack the robustness and scalability needed for production systems.
 
+---
 
+**3. What is the difference between A/B testing, Green/Blue deployments, Canary deployments, and Challenger/Champion deployments?**
 
+- **A/B Testing:**  
+  Two or more versions of a model run concurrently with a split of the traffic between them. This method collects performance data from real users, allowing us to statistically compare the models.
 
+- **Green/Blue Deployments:**  
+  Two identical production environments are maintained (blue for the current version and green for the new version). The new version is deployed to the idle (green) environment, and once verified, the traffic is switched over from blue to green. This minimizes downtime and facilitates quick rollback if needed.
+
+- **Canary Deployments:**  
+  A new model is released to a small subset of users initially. This gradual rollout helps in identifying any potential issues early on, before rolling out the model to the entire user base.
+
+- **Challenger/Champion Deployments:**  
+  The current model (champion) is compared with a new model (challenger) running in parallel. The challenger only replaces the champion if it outperforms it, ensuring that the best-performing model is used in production.
+
+---
+
+**4. Why are we hosting artifacts in AWS S3 and metadata in RDS?**
+
+The decision to host artifacts in AWS S3 and metadata in RDS is based on the strengths of each service:
+- **AWS S3:**  
+  S3 is ideal for storing large, unstructured data such as models, logs, and datasets. It offers high scalability, durability, and cost-efficiency.
+- **RDS:**  
+  RDS, typically using PostgreSQL in our case, is better suited for structured data like experiment parameters and metrics. It provides reliable query capabilities and transactional integrity, which are important for managing metadata effectively.
+
+---
+
+**5. What are some security concerns and challenges involved with using secrets and API keys to authenticate our GitHub Actions workflow instance?**
+
+There are several security challenges:
+- **Risk of Exposure:**  
+  If secrets (such as AWS keys or the Kaggle API key) are not handled carefully, they might be accidentally exposed in logs or through misconfigurations, leading to unauthorized access.
+- **Access Control:**  
+  It is important to ensure that these secrets have only the minimal permissions required. Over-privileging increases the potential damage in case of a leak.
+- **Secret Rotation and Management:**  
+  Regularly updating and rotating these keys is critical to minimize the risk period if a key is compromised.
+- **Environment Protection:**  
+  Ensuring that the secrets are not printed or stored in an insecure manner during the build and deployment process is another key challenge.
+
+---
+
+**6. What was the biggest challenge for you in completing the assignment?**
+
+For me, the biggest challenge was setting up and integrating the entire MLOps pipeline. This included:
+- **Infrastructure Configuration:**  
+  Correctly setting up AWS services (S3 for artifacts and RDS for metadata) and ensuring they worked seamlessly with the MLFlow tracking server.
+- **Pipeline Automation:**  
+  Moving from exploratory notebooks to fully automated pipelines in GitHub Actions required a good understanding of CI/CD practices and handling various dependencies.
+- **Security Concerns:**  
+  Ensuring that secrets and API keys were managed securely and not accidentally exposed in the workflow added an extra layer of complexity.
